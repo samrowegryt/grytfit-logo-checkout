@@ -1,59 +1,3 @@
-let cachedToken = null;
-let cachedTokenExpiresAt = 0;
-
-async function getShopifyAccessToken() {
-  const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
-  const clientId = process.env.SHOPIFY_CLIENT_ID;
-  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
-
-  if (!storeDomain || !clientId || !clientSecret) {
-    throw new Error("Missing Shopify environment variables");
-  }
-
-  const now = Date.now();
-
-  if (cachedToken && cachedTokenExpiresAt > now + 60000) {
-    return cachedToken;
-  }
-
-  const shopName = storeDomain.replace(".myshopify.com", "");
-
-  const response = await fetch(`https://${shopName}.myshopify.com/admin/oauth/access_token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      client_id: clientId,
-      client_secret: clientSecret
-    })
-  });
-
-   const rawText = await response.text();
-
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch (parseError) {
-    throw new Error(
-      "Shopify token endpoint returned non-JSON. Status: " +
-      response.status +
-      ". First 300 chars: " +
-      rawText.slice(0, 300)
-    );
-  }
-
-  if (!response.ok || !data.access_token) {
-    throw new Error("Could not get Shopify access token: " + JSON.stringify(data));
-  }
-
-  cachedToken = data.access_token;
-  cachedTokenExpiresAt = Date.now() + ((data.expires_in || 86399) * 1000);
-
-  return cachedToken;
-}
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -75,7 +19,11 @@ export default async function handler(req, res) {
     }
 
     const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
-    const accessToken = await getShopifyAccessToken();
+    const accessToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+
+    if (!storeDomain || !accessToken) {
+      return res.status(500).json({ error: "Missing Shopify environment variables" });
+    }
 
     const lineItems = items.map((item, index) => ({
       title: item.productType
@@ -109,17 +57,22 @@ export default async function handler(req, res) {
       }
     `;
 
-     const response = await fetch(`https://${shopName}.myshopify.com/admin/oauth/access_token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: clientId,
-      client_secret: clientSecret
-    })
-  });
+    const response = await fetch(`https://${storeDomain}/admin/api/2026-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": accessToken
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: {
+          input: {
+            lineItems,
+            note: "Custom logo decal order created from GrytFit calculator"
+          }
+        }
+      })
+    });
 
     const data = await response.json();
 
@@ -135,7 +88,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({ invoiceUrl });
-    } catch (error) {
+  } catch (error) {
     console.error("DRAFT_ORDER_ERROR:", error);
     return res.status(500).json({
       error: error.message,
