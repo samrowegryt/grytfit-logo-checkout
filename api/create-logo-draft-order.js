@@ -30,7 +30,19 @@ async function getShopifyAccessToken() {
     })
   });
 
-  const data = await response.json();
+   const rawText = await response.text();
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (parseError) {
+    throw new Error(
+      "Shopify token endpoint returned non-JSON. Status: " +
+      response.status +
+      ". First 300 chars: " +
+      rawText.slice(0, 300)
+    );
+  }
 
   if (!response.ok || !data.access_token) {
     throw new Error("Could not get Shopify access token: " + JSON.stringify(data));
