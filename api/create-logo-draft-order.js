@@ -109,22 +109,17 @@ export default async function handler(req, res) {
       }
     `;
 
-    const response = await fetch(`https://${storeDomain}/admin/api/2026-04/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": accessToken
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          input: {
-            lineItems,
-            note: "Custom logo decal order created from GrytFit calculator"
-          }
-        }
-      })
-    });
+     const response = await fetch(`https://${shopName}.myshopify.com/admin/oauth/access_token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret
+    })
+  });
 
     const data = await response.json();
 
