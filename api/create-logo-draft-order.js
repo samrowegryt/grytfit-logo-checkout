@@ -128,7 +128,11 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({ invoiceUrl });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+    } catch (error) {
+    console.error("DRAFT_ORDER_ERROR:", error);
+    return res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
   }
 }
