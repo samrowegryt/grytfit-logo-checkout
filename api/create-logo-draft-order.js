@@ -26,18 +26,21 @@ export default async function handler(req, res) {
     }
 
     const lineItems = items.map((item, index) => ({
-      title: item.productType
-        ? `Custom ${item.productType} Logo Decal #${index + 1}`
-        : `Custom Logo Decal #${index + 1}`,
-      quantity: Number(item.quantity || 1),
-      originalUnitPrice: String(Number(item.price).toFixed(2)),
-      customAttributes: [
+  title: item.productType
+    ? `Custom ${item.productType} Logo Decal #${index + 1}`
+    : `Custom Logo Decal #${index + 1}`,
+  quantity: Number(item.quantity || 1),
+  originalUnitPrice: String(Number(item.price).toFixed(2)),
+  requiresShipping: true,
+  taxable: true,
+  customAttributes: [
         { key: "Width", value: `${item.width} in` },
         { key: "Height", value: `${item.height} in` },
         { key: "Surface", value: String(item.surface || "") },
         { key: "Laminate", value: String(item.laminate || "") },
         { key: "Cut Style", value: String(item.cut || "") },
         { key: "Artwork Help", value: item.artwork ? "Yes" : "No" },
+    { key: "Proof Email", value: String(item.proofEmail || "") },
         { key: "Notes", value: String(item.notes || "") }
       ]
     }));
@@ -66,11 +69,15 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         query: mutation,
         variables: {
-          input: {
-            lineItems,
-            note: "Custom logo decal order created from GrytFit calculator"
-          }
-        }
+  input: {
+    lineItems,
+    shippingLine: {
+      title: "Free Shipping",
+      price: "0.00"
+    },
+    note: "Custom logo decal order created from GrytFit calculator"
+  }
+}
       })
     });
 
