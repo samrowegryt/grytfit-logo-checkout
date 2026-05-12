@@ -1,0 +1,8 @@
+{
+  "name": "grytfit-logo-checkout",
+  "version": "1.0.0",
+  "dependencies": {
+    "@vercel/blob": "^0.23.4",
+    "resend": "^4.0.0"
+  }
+}
