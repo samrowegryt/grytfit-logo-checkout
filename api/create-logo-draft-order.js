@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { items } = req.body;
+   const { items, discountCode } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "No items provided" });
@@ -161,12 +161,16 @@ ${item.uploadedFileUrl || "No upload"}
             input: {
               lineItems,
 
-              shippingLine: {
-                title: "Free Shipping",
-                price: "0.00"
-              },
+          shippingLine: {
+  title: "Free Shipping",
+  price: "0.00"
+},
 
-              note: orderNotes
+allowDiscountCodesInCheckout: true,
+
+discountCodes: discountCode ? [discountCode] : [],
+
+note: orderNotes
             }
           }
         })
